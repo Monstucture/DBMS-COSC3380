@@ -42,6 +42,49 @@ class CustomerService {
         }
     }
 
+    // GET promotions
+    static async getCustomerCoupons(customerId) {
+        try {
+            const [coupons] = await pool.query(
+                customerQueries.getAvailableCoupons,
+                [customerId]
+            );
+            return coupons;
+        } catch (error) {
+            console.error('Service - getCustomerCoupons error:', error);
+            throw error;
+        }
+    }
+
+    static async validateAndApplyCoupon(connection, customerId, couponId, total) {
+        if (!couponId) return { discountPercentage: 0, discountAmount: 0 };
+
+        const [couponRows] = await connection.query(
+            customerQueries.getCouponById,
+            [couponId, customerId]
+        );
+
+        if (!couponRows.length) {
+            throw new Error(CUSTOMER_ERRORS.INVALID_COUPON);
+        }
+
+        const coupon = couponRows[0];
+        let discountAmount = 0;
+        let discountPercentage = 0;
+
+        if (coupon.Coupon_Type === 'Birthday') {
+            // Find cheapest item logic would be handled in the order calculation
+            discountAmount = total;  // We'll apply this to the cheapest item only
+        } else if (coupon.Discount_Percentage) {
+            discountPercentage = coupon.Discount_Percentage;
+        } else if (coupon.Discount_Amount) {
+            discountAmount = coupon.Discount_Amount;
+        }
+
+        return { discountPercentage, discountAmount, coupon };
+    }
+
+    // Handle register user
     static async registerCustomer(customerData) {
         const connection = await pool.getConnection();
         try {
@@ -91,82 +134,166 @@ class CustomerService {
 
 
     // Place order
-    static async placeOrder(customerId, orderData) {
+    static async placeOrder(customerId, items, total, couponId) {
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+    
+            // Create initial transaction
+            const [transactionResult] = await connection.query(
+                transactionQueries.createTransaction,
+                [
+                    customerId,         // Customer_ID
+                    total,             // Total_Price
+                    'Credit Card',     // Payment_Type
+                    couponId || null,  // Promotion_ID
+                    0,                 // Discount_Percentage
+                    0                  // Discount_Amount
+                ]
+            );
+    
+            const transactionId = transactionResult.insertId;
+        
+            // Process each item
+            for (const item of items) {
+                // Check inventory
+                const [inventoryResult] = await connection.query(
+                    'SELECT Quantity FROM item WHERE Item_ID = ?',
+                    [item.Item_ID]
+                );
+    
+                if (!inventoryResult.length || inventoryResult[0].Quantity < item.quantity) {
+                    throw new Error(CUSTOMER_ERRORS.INSUFFICIENT_STOCK);
+                }
+    
+                // Create transaction item
+                await connection.query(
+                    transactionQueries.createTransactionItem,
+                    [transactionId, item.Item_ID, item.quantity]
+                );
+    
+                // Update inventory
+                await connection.query(
+                    'UPDATE item SET Quantity = Quantity - ? WHERE Item_ID = ?',
+                    [item.quantity, item.Item_ID]
+                );
+            }
+    
+            // Handle coupon if provided
+            let finalTotal = total;
+            let discountAmount = 0;
+    
+            if (couponId) {
+                const [coupons] = await connection.query(
+                    'SELECT * FROM promotions WHERE Promotion_ID = ?',
+                    [couponId]
+                );
+    
+                if (coupons.length > 0) {
+                    const coupon = coupons[0];
+                    // Handle free item coupon
+                    if (coupon.Promotion_Type === 'Birthday' || 
+                        coupon.Description.includes('Free Ice Cream')) {
+                        // Find cheapest item
+                        const cheapestItem = items.reduce((min, item) => 
+                            item.Unit_Price < min.Unit_Price ? item : min
+                        );
+                        discountAmount = cheapestItem.Unit_Price;
+                        finalTotal -= discountAmount;
+                    }
+    
+                    // Update transaction with final amounts
+                    await connection.query(
+                        `UPDATE transaction 
+                         SET Total_Price = ?,
+                             Discount_Amount = ?
+                         WHERE Transaction_ID = ?`,
+                        [finalTotal, discountAmount, transactionId]
+                    );
+                }
+            }
+    
+            // Update points (1 point per dollar)
+            const pointsEarned = Math.floor(finalTotal);
+            await connection.query(
+                customerQueries.updateCustomerPoints,
+                [pointsEarned, pointsEarned, pointsEarned, pointsEarned, customerId]
+            );
+    
+            await connection.commit();
+    
+            return {
+                transactionId,
+                total: finalTotal,
+                discountAmount,
+                pointsEarned
+            };
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+      
+    // TODO
+    static async placeGuestOrder(items, total, customerInfo, discountPercentage, discountAmount) {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-
-        // Get customer data for membership check
-        const [customerData] = await connection.query(
-            customerQueries.getCustomerById,
-            [customerId]
-        );
-
-        // Calculate discount
-        let discountPercentage = 0;
-        if (customerData[0].Membership_Level !== 'Bronze' && orderData.items.length >= 4) {
-            discountPercentage = 5;
-        }
-
-        const discountAmount = Math.round((orderData.total * discountPercentage) / 100);
-        const finalTotal = orderData.total - discountAmount;
-
+    
         // Create transaction
         const [transactionResult] = await connection.query(
-            transactionQueries.createTransaction,
-            [customerId, finalTotal, 'Credit Card', discountPercentage, discountAmount]
+        transactionQueries.createTransaction,
+        [null, total * (1 - discountPercentage / 100) - discountAmount, 'Credit Card', discountPercentage, discountAmount, customerInfo.name, customerInfo.phoneNumber, customerInfo.address]
         );
-
+    
         const transactionId = transactionResult.insertId;
-
+    
         // Consolidate items by ID and sum quantities
-        const consolidatedItems = orderData.items.reduce((acc, item) => {
-            if (!acc[item.Item_ID]) {
-                acc[item.Item_ID] = { ...item };
-            } else {
-                acc[item.Item_ID].quantity += item.quantity;
-            }
-            return acc;
+        const consolidatedItems = items.reduce((acc, item) => {
+        if (!acc[item.Item_ID]) {
+            acc[item.Item_ID] = { ...item };
+        } else {
+            acc[item.Item_ID].quantity += item.quantity;
+        }
+        return acc;
         }, {});
-
+    
         // Create transaction items
         for (const itemId in consolidatedItems) {
-            const item = consolidatedItems[itemId];
-            
-            // Check inventory
-            const [inventoryResult] = await connection.query(
-                'SELECT Quantity FROM item WHERE Item_ID = ?',
-                [item.Item_ID]
-            );
-
-            if (!inventoryResult.length || inventoryResult[0].Quantity < item.quantity) {
-                throw new Error(CUSTOMER_ERRORS.INSUFFICIENT_STOCK);
-            }
-
-            // Create transaction item
-            await connection.query(
-                transactionQueries.createTransactionItem,
-                [transactionId, item.Item_ID, item.quantity]
-            );
-
-            // Update inventory
-            await connection.query(
-                'UPDATE item SET Quantity = Quantity - ? WHERE Item_ID = ?',
-                [item.quantity, item.Item_ID]
-            );
+        const item = consolidatedItems[itemId];
+        
+        // Check inventory
+        const [inventoryResult] = await connection.query(
+            'SELECT Quantity FROM item WHERE Item_ID = ?',
+            [item.Item_ID]
+        );
+    
+        if (!inventoryResult.length || inventoryResult[0].Quantity < item.quantity) {
+            throw new Error(CUSTOMER_ERRORS.INSUFFICIENT_STOCK);
         }
-
-        // Update points (1 point per dollar)
-        const pointsEarned = Math.floor(finalTotal);
-        await this.updateCustomerPoints(connection, customerId, pointsEarned);
-
+    
+        // Create transaction item
+        await connection.query(
+            transactionQueries.createTransactionItem,
+            [transactionId, item.Item_ID, item.quantity]
+        );
+    
+        // Update inventory
+        await connection.query(
+            'UPDATE item SET Quantity = Quantity - ? WHERE Item_ID = ?',
+            [item.quantity, item.Item_ID]
+        );
+        }
+    
         await connection.commit();
-
+    
         return {
-            transactionId,
-            total: finalTotal,
-            discountApplied: discountAmount,
-            pointsEarned
+        transactionId,
+        total: total * (1 - discountPercentage / 100) - discountAmount,
+        discountApplied: discountAmount,
+        pointsEarned: 0
         };
     } catch (error) {
         await connection.rollback();
@@ -174,66 +301,6 @@ class CustomerService {
     } finally {
         connection.release();
     }
-}
-
-    static async placeGuestOrder(orderData) {
-        const connection = await pool.getConnection();
-        try {
-            await connection.beginTransaction();
-
-            const { 
-                items, 
-                total, 
-                customerInfo: { 
-                    name, 
-                    phoneNumber, 
-                    address 
-                } 
-            } = orderData;
-
-            // Create transaction for guest
-            const [transactionResult] = await connection.query(
-                transactionQueries.createGuestOrder,
-                [
-                    total,
-                    'Credit Card', // Payment type - you might want to make this configurable
-                    name,
-                    phoneNumber,
-                    address
-                ]
-            );
-
-            const transactionId = transactionResult.insertId;
-
-            // Create transaction items
-            for (const item of items) {
-                await connection.query(
-                    transactionQueries.createTransactionItem,
-                    [transactionId, item.Item_ID, item.quantity]
-                );
-
-                // Update inventory (if you're tracking inventory)
-                await connection.query(
-                    'UPDATE item SET Quantity = Quantity - ? WHERE Item_ID = ?',
-                    [item.quantity, item.Item_ID]
-                );
-            }
-
-            await connection.commit();
-            
-            return {
-                transactionId,
-                total,
-                message: 'Order placed successfully'
-            };
-
-        } catch (error) {
-            await connection.rollback();
-            console.error('Service - placeGuestOrder error:', error);
-            throw error;
-        } finally {
-            connection.release();
-        }
     }
 
     static getMembershipDetails(level) {

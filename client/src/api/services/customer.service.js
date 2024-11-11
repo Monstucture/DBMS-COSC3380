@@ -21,6 +21,16 @@ export const customerService = {
     }
   },
 
+  getAvailableCoupons: async () => {
+    try {
+      const response = await api.get(API_CONFIG.ENDPOINTS.CUSTOMER.COUPONS);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+      throw error;
+    }
+  },
+
   register: async (customerData) => {
     try {
       const response = await api.post(
@@ -44,7 +54,11 @@ export const customerService = {
     try {
       const response = await api.post(API_CONFIG.ENDPOINTS.CUSTOMER.ORDERS, {
         items: orderData.items,
-        total: orderData.total
+        total: orderData.total,
+        paymentType: 'Credit Card', // Hard code credit card TODO fix later
+        discountPercentage: orderData.selectedCoupon?.Discount_Percentage || 0,
+        discountAmount: orderData.selectedCoupon?.Discount_Amount || 0,
+        promotionId: orderData.promotionId || null
       });
       return response.data;
     } catch (error) {
@@ -52,7 +66,8 @@ export const customerService = {
       throw error;
     }
   },
-
+  
+  // TODO
   placeGuestOrder: async (orderData) => {
     try {
       const response = await api.post(API_CONFIG.ENDPOINTS.CUSTOMER.GUEST_ORDERS, orderData);

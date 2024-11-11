@@ -25,6 +25,9 @@ const CUSTOMER_ERRORS = {
     ALREADY_EXISTS: 'Customer with this phone number already exists',
     INVALID_INPUT: 'Missing required customer information',
     INSUFFICIENT_STOCK: 'Insufficient stock for one or more items',
+    INVALID_COUPON: 'Invalid or expired coupon',
+    COUPON_ALREADY_USED: 'Coupon has already been used',
+    COUPON_EXPIRED: 'Coupon has expired'
 };
 
 const TRANSACTION_ERRORS = {

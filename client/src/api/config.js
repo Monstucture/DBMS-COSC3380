@@ -13,7 +13,8 @@ const API_CONFIG = {
         ACCOUNT: '/acc/customer/account',
         ORDERS: '/acc/customer/orders',
         GUEST_ORDER: '/acc/guest-orders',
-        REGISTER: '/acc/customer/register'
+        REGISTER: '/acc/customer/register',
+        COUPONS: '/acc/customer/coupons'
       },
       SHOP: {
         FLAVORS: '/shop/all-flavors',

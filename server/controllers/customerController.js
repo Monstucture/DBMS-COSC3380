@@ -26,6 +26,7 @@ class CustomerController {
         }
     }
 
+    // TODO get past orders
     static async getOrders(req, res) {
         try {
             if (req.user.role !== 'customer') {
@@ -40,6 +41,30 @@ class CustomerController {
         }
     }
 
+    // GET customers coupon
+    static async getAvailableCoupons(req, res) {
+        try {
+            if (req.user.role !== 'customer') {
+                throw new Error(CUSTOMER_ERRORS.INVALID_ROLE);
+            }
+
+            const coupons = await CustomerService.getCustomerCoupons(req.user.id);
+            res.json(coupons);
+        } catch (error) {
+            console.error('Controller - getAvailableCoupons error:', error);
+            
+            if (error.message === CUSTOMER_ERRORS.INVALID_ROLE) {
+                res.status(403);
+            } else {
+                res.status(500);
+            }
+            
+            res.json({ error: error.message });
+        }
+    }
+
+
+    // POST register
     static async register(req, res) {
         try {
             const { 
@@ -88,78 +113,81 @@ class CustomerController {
         }
     }
     
+
+    // POST order for customer
     static async placeOrder(req, res) {
-        try {
-            if (req.user.role !== 'customer') {
-                throw new Error(CUSTOMER_ERRORS.INVALID_ROLE);
-            }
+      try {
+          if (req.user.role !== 'customer') {
+              throw new Error(CUSTOMER_ERRORS.INVALID_ROLE);
+          }
 
-            const { items, total } = req.body;
-            if (!items?.length || !total) {
-                throw new Error(CUSTOMER_ERRORS.INVALID_ORDER);
-            }
+          const { items, total, couponId } = req.body;
+          if (!items?.length || !total) {
+              throw new Error(CUSTOMER_ERRORS.INVALID_ORDER);
+          }
 
-            const orderResult = await CustomerService.placeOrder(req.user.id, {
-                items,
-                total
-            });
+          const orderResult = await CustomerService.placeOrder(
+              req.user.id,
+              items,
+              total,
+              couponId
+          );
 
-            res.status(201).json({
-                message: 'Order placed successfully',
-                ...orderResult
-            });
-        } catch (error) {
-            console.error('Controller - placeOrder error:', error);
+          res.status(201).json({
+              message: 'Order placed successfully',
+              ...orderResult
+          });
+      } catch (error) {
+          console.error('Controller - placeOrder error:', error);
 
-            if (error.message === CUSTOMER_ERRORS.INVALID_ROLE) {
-                res.status(403);
-            } else if (error.message === CUSTOMER_ERRORS.INVALID_ORDER) {
-                res.status(400);
-            } else {
-                res.status(500);
-            }
+          if (error.message === CUSTOMER_ERRORS.INVALID_ROLE) {
+              res.status(403);
+          } else if (error.message === CUSTOMER_ERRORS.INVALID_ORDER) {
+              res.status(400);
+          } else if (error.message === CUSTOMER_ERRORS.INVALID_COUPON) {
+              res.status(400);
+          } else {
+              res.status(500);
+          }
 
-            res.json({ error: error.message });
-        }
+          res.json({ error: error.message });
+      }
     }
-
+      
+    // POST place guest order
     static async placeGuestOrder(req, res) {
-        try {
-            const { items, total, customerInfo } = req.body;
-
-            if (!items?.length || !total || !customerInfo) {
-                throw new Error(CUSTOMER_ERRORS.INVALID_ORDER);
-            }
-
-            if (!customerInfo.name || !customerInfo.phoneNumber || !customerInfo.address) {
-                throw new Error(CUSTOMER_ERRORS.INVALID_GUEST_INFO);
-            }
-
-            const orderResult = await CustomerService.placeGuestOrder({
-                items,
-                total,
-                customerInfo
-            });
-
-            res.status(201).json({
-                message: 'Guest order placed successfully',
-                ...orderResult
-            });
-        } catch (error) {
-            console.error('Controller - placeGuestOrder error:', error);
-
-            if (error.message === CUSTOMER_ERRORS.INVALID_ORDER) {
-                res.status(400);
-            } else if (error.message === CUSTOMER_ERRORS.INVALID_GUEST_INFO) {
-                res.status(400);
-            } else {
-                res.status(500);
-            }
-
-            res.json({ error: error.message });
+      try {
+        const { items, total, customerInfo, discountPercentage, discountAmount } = req.body;
+        if (!items?.length || !total || !customerInfo) {
+          throw new Error(CUSTOMER_ERRORS.INVALID_ORDER);
         }
+    
+        const orderResult = await CustomerService.placeGuestOrder(
+          items,
+          total,
+          customerInfo,
+          discountPercentage,
+          discountAmount
+        );
+    
+        res.status(201).json({
+          message: 'Order placed successfully',
+          ...orderResult
+        });
+      } catch (error) {
+        console.error('Controller - placeGuestOrder error:', error);
+    
+        if (error.message === CUSTOMER_ERRORS.INVALID_ORDER) {
+          res.status(400);
+        } else {
+          res.status(500);
+        }
+    
+        res.json({ error: error.message });
+      }
     }
 
+    // PUT update customer account TODO
     static async updateAccount(req, res) {
         try {
             if (req.user.role !== 'customer') {

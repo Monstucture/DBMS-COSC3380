@@ -44,6 +44,51 @@ const customerQueries = {
       WHERE t.Customer_ID = ?
       ORDER BY t.Date DESC
     `,
+
+    getAvailableCoupons: `
+        SELECT 
+            cc.Coupon_ID,
+            cc.Customer_ID,
+            cc.Coupon_Type,
+            cc.Description,
+            cc.Created_Date,
+            cc.Expiry_Date,
+            cc.Is_Used,
+            cc.Promotion_ID,
+            p.Discount_Percentage,
+            p.Discount_Amount
+        FROM customer_coupons cc
+        LEFT JOIN promotions p ON cc.Promotion_ID = p.Promotion_ID
+        WHERE cc.Customer_ID = ?
+        AND cc.Is_Used = FALSE
+        AND cc.Expiry_Date >= CURDATE()
+        ORDER BY cc.Expiry_Date ASC
+    `,
+
+    getCouponById: `
+        SELECT 
+            cc.*,
+            p.Discount_Percentage,
+            p.Discount_Amount
+        FROM customer_coupons cc
+        LEFT JOIN promotions p ON cc.Promotion_ID = p.Promotion_ID
+        WHERE cc.Coupon_ID = ?
+        AND cc.Customer_ID = ?
+        AND cc.Is_Used = FALSE
+        AND cc.Expiry_Date >= CURDATE()
+    `,
+
+    useCoupon: `
+        UPDATE customer_coupons
+        SET 
+            Is_Used = TRUE,
+            Used_Date = CURDATE(),
+            Transaction_ID = ?
+        WHERE Coupon_ID = ?
+        AND Customer_ID = ?
+        AND Is_Used = FALSE
+        AND Expiry_Date >= CURDATE()
+    `,
   
     updateCustomerPoints: `
       UPDATE customer

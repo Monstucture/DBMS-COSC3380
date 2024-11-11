@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { shopService } from '../../../api';
-import styles from './InventoryManagement.css';
 
 function InventoryManagement() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [confirmQuantity, setConfirmQuantity] = useState(null);
   const [newItem, setNewItem] = useState({
     Item_Name: '',
     Unit_Price: '',
@@ -23,12 +21,7 @@ function InventoryManagement() {
   const fetchItems = async () => {
     try {
       const data = await shopService.getAllFlavors();
-      // Initialize items with temporary quantity field
-      const itemsWithTemp = data.map(item => ({
-        ...item,
-        tempQuantity: item.Quantity
-      }));
-      setItems(itemsWithTemp);
+      setItems(data);
       setError(null);
     } catch (err) {
       setError(err.message || 'Error loading items');
@@ -104,204 +97,136 @@ function InventoryManagement() {
     }
   };
 
-  const handleQuantityChange = async (itemId, quantityToAdd) => {
+  const handleOrderMore = async (itemId, quantity) => {
     try {
       const userRole = localStorage.getItem('userRole');
-      const item = items.find(i => i.Item_ID === itemId);
-      const newTotalQuantity = item.Quantity + parseInt(quantityToAdd);
-      
-      await shopService.updateQuantity(itemId, newTotalQuantity, userRole);
-      
-      // Update local state immediately
-      setItems(prevItems => prevItems.map(item => 
-        item.Item_ID === itemId 
-          ? { ...item, Quantity: newTotalQuantity, tempQuantity: 0 } // Reset tempQuantity after addition
-          : item
-      ));
-      
-      // Refresh inventory logs immediately after successful update
+      const currentItem = items.find(item => item.Item_ID === itemId);
+      const newQuantity = currentItem.Quantity + quantity;
+  
+      await shopService.updateQuantity(itemId, newQuantity, userRole);
+      await fetchItems();
       await fetchInventoryLogs();
       setError(null);
     } catch (err) {
       setError(err.message || 'Error updating quantity');
-      // Revert changes on error
-      await fetchItems();
-      await fetchInventoryLogs();
     }
   };
-
-  const handleQuantityInputChange = (itemId, newValue) => {
-    setItems(prevItems => prevItems.map(item => 
-      item.Item_ID === itemId 
-        ? { ...item, tempQuantity: newValue }
-        : item
-    ));
-  };
-
-  const handleApplyQuantity = (itemId, quantityToAdd, currentQuantity) => {
-    const addQty = parseInt(quantityToAdd) || 0;
-      handleQuantityChange(itemId, addQty);
-  };
-
-  const QuantityConfirmationModal = ({ onConfirm, onCancel, data }) => {
-    if (!data) return null;
-
-    return (
-      <div className={styles.modalOverlay}>
-        <div className={styles.modal}>
-          <h3>Confirm Quantity Addition</h3>
-          <p>Current quantity: {data.currentQuantity}</p>
-          <p>Quantity to add: {data.quantity}</p>
-          <p>New total will be: {data.currentQuantity + data.quantity}</p>
-          <div className={styles.modalButtons}>
-            <button 
-              onClick={() => {
-                onConfirm(data.itemId, data.quantity);
-                onCancel();
-              }}
-              className={styles.confirmButton}
-            >
-              Confirm
-            </button>
-            <button 
-              onClick={onCancel}
-              className={styles.cancelButton}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderQuantityCell = (item) => (
-    <td className={styles.quantityCell}>
-      <div className={styles.quantityControl}>
-        <input
-          type="number"
-          min="0"
-          value={item.tempQuantity || ''}
-          onChange={(e) => handleQuantityInputChange(item.Item_ID, e.target.value)}
-          placeholder="Add quantity"
-          className={`${styles.quantityInput} ${item.LowStock ? styles.lowStock : ''}`}
-        />
-        <button 
-          onClick={() => handleApplyQuantity(
-            item.Item_ID, 
-            item.tempQuantity,
-            item.Quantity
-          )}
-          className={styles.applyButton}
-        >
-          Add
-        </button>
-      </div>
-      <div className={styles.currentStock}>
-        Current Stock: {item.Quantity}
-      </div>
-      {item.LowStock && (
-        <span className={styles.lowStockWarning}>
-          Low Stock!
-        </span>
-      )}
-    </td>
-  );
 
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className={styles.container}>
-      <h1>Inventory Management</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Inventory Management</h1>
       
-      {error && <div className={styles.errorAlert} role="alert">{error}</div>}
+      {error && <div className="bg-red-100 border border-red-400 text-red-700 p-4 mb-6">{error}</div>}
 
       {/* Add New Item Form */}
-      <div className={styles.formSection}>
-        <h2>Add New Item</h2>
-        <form onSubmit={handleAddItem} className={styles.form}>
-          <div className={styles.formGrid}>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-bold mb-4">Add New Item</h2>
+        <form onSubmit={handleAddItem} className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-2">Item Name</label>
             <input
               type="text"
-              placeholder="Item Name"
               value={newItem.Item_Name}
               onChange={(e) => setNewItem({...newItem, Item_Name: e.target.value})}
-              className={styles.input}
-            />
-            <input
-              type="number"
-              placeholder="Price"
-              value={newItem.Unit_Price}
-              onChange={(e) => setNewItem({...newItem, Unit_Price: e.target.value})}
-              className={styles.input}
-            />
-            <input
-              type="number"
-              placeholder="Initial Quantity"
-              value={newItem.Quantity}
-              onChange={(e) => setNewItem({...newItem, Quantity: e.target.value})}
-              className={styles.input}
-            />
-            <input
-              type="number"
-              placeholder="Calories"
-              value={newItem.Calories}
-              onChange={(e) => setNewItem({...newItem, Calories: e.target.value})}
-              className={styles.input}
-            />
-            <input
-              type="number"
-              placeholder="Protein (g)"
-              value={newItem.Protein}
-              onChange={(e) => setNewItem({...newItem, Protein: e.target.value})}
-              className={styles.input}
-            />
-            <input
-              type="number"
-              placeholder="Sugar (g)"
-              value={newItem.Sugar}
-              onChange={(e) => setNewItem({...newItem, Sugar: e.target.value})}
-              className={styles.input}
-            />
-            <input
-              type="number"
-              placeholder="Total Carbs (g)"
-              value={newItem.Total_Carbs}
-              onChange={(e) => setNewItem({...newItem, Total_Carbs: e.target.value})}
-              className={styles.input}
-            />
-            <input
-              type="number"
-              placeholder="Total Fat (g)"
-              value={newItem.Total_Fat}
-              onChange={(e) => setNewItem({...newItem, Total_Fat: e.target.value})}
-              className={styles.input}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <button type="submit" className={styles.submitButton}>Add Item</button>
+          <div>
+            <label className="block font-medium mb-2">Price</label>
+            <input
+              type="number"
+              value={newItem.Unit_Price}
+              onChange={(e) => setNewItem({...newItem, Unit_Price: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Quantity</label>
+            <div className="flex items-center">
+              <input
+                type="number"
+                value={newItem.Quantity}
+                onChange={(e) => setNewItem({...newItem, Quantity: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Calories</label>
+            <input
+              type="number"
+              value={newItem.Calories}
+              onChange={(e) => setNewItem({...newItem, Calories: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Protein</label>
+            <input
+              type="number"
+              value={newItem.Protein}
+              onChange={(e) => setNewItem({...newItem, Protein: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Sugar</label>
+            <input
+              type="number"
+              value={newItem.Sugar}
+              onChange={(e) => setNewItem({...newItem, Sugar: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Total Carbs</label>
+            <input
+              type="number"
+              value={newItem.Total_Carbs}
+              onChange={(e) => setNewItem({...newItem, Total_Carbs: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Total Fat</label>
+            <input
+              type="number"
+              value={newItem.Total_Fat}
+              onChange={(e) => setNewItem({...newItem, Total_Fat: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="col-span-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Add Item
+          </button>
         </form>
       </div>
 
       {/* Items List */}
-      <div className={styles.tableSection}>
-        <h2>Current Inventory</h2>
-        <table className={styles.table}>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold mb-4">Current Inventory</h2>
+        <table className="w-full">
           <thead>
             <tr>
-              <th>Item Name</th>
-              <th>Price</th>
-              <th>Quantity</th>
-              <th>Calories</th>
-              <th>Protein</th>
-              <th>Sugar</th>
-              <th>Total Carbs</th>
-              <th>Total Fat</th>
-              <th>Actions</th>
+              <th className="text-left p-2">Item Name</th>
+              <th className="text-left p-2">Price</th>
+              <th className="text-left p-2">Quantity</th>
+              <th className="text-left p-2">Calories</th>
+              <th className="text-left p-2">Protein</th>
+              <th className="text-left p-2">Sugar</th>
+              <th className="text-left p-2">Total Carbs</th>
+              <th className="text-left p-2">Total Fat</th>
+              <th className="text-left p-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {items.map(item => (
-              <tr key={item.Item_ID} className={item.LowStock ? styles.lowStock : ''}>
+              <tr key={item.Item_ID} className="border-b">
                 {editingItem?.Item_ID === item.Item_ID ? (
                   <>
                     <td>
@@ -309,7 +234,7 @@ function InventoryManagement() {
                         type="text"
                         value={editingItem.Item_Name}
                         onChange={(e) => setEditingItem({...editingItem, Item_Name: e.target.value})}
-                        className={styles.input}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
                     <td>
@@ -317,16 +242,23 @@ function InventoryManagement() {
                         type="number"
                         value={editingItem.Unit_Price}
                         onChange={(e) => setEditingItem({...editingItem, Unit_Price: e.target.value})}
-                        className={styles.input}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
-                    {renderQuantityCell(item)}
+                    <td>
+                      <input
+                        type="number"
+                        value={editingItem.Quantity}
+                        onChange={(e) => setEditingItem({...editingItem, Quantity: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </td>
                     <td>
                       <input
                         type="number"
                         value={editingItem.Calories}
                         onChange={(e) => setEditingItem({...editingItem, Calories: e.target.value})}
-                        className={styles.input}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
                     <td>
@@ -334,7 +266,7 @@ function InventoryManagement() {
                         type="number"
                         value={editingItem.Protein}
                         onChange={(e) => setEditingItem({...editingItem, Protein: e.target.value})}
-                        className={styles.input}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
                     <td>
@@ -342,7 +274,7 @@ function InventoryManagement() {
                         type="number"
                         value={editingItem.Sugar}
                         onChange={(e) => setEditingItem({...editingItem, Sugar: e.target.value})}
-                        className={styles.input}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
                     <td>
@@ -350,7 +282,7 @@ function InventoryManagement() {
                         type="number"
                         value={editingItem.Total_Carbs}
                         onChange={(e) => setEditingItem({...editingItem, Total_Carbs: e.target.value})}
-                        className={styles.input}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
                     <td>
@@ -358,27 +290,53 @@ function InventoryManagement() {
                         type="number"
                         value={editingItem.Total_Fat}
                         onChange={(e) => setEditingItem({...editingItem, Total_Fat: e.target.value})}
-                        className={styles.input}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
                     <td>
-                      <button onClick={handleUpdateItem} className={styles.saveButton}>Save</button>
-                      <button onClick={() => setEditingItem(null)} className={styles.cancelButton}>Cancel</button>
+                      <button
+                        onClick={handleUpdateItem}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingItem(null)}
+                        className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        Cancel
+                      </button>
                     </td>
                   </>
                 ) : (
                   <>
                     <td>{item.Item_Name}</td>
                     <td>${item.Unit_Price}</td>
-                    {renderQuantityCell(item)}
+                    <td>{item.Quantity}</td>
                     <td>{item.Calories}</td>
                     <td>{item.Protein}g</td>
                     <td>{item.Sugar}g</td>
                     <td>{item.Total_Carbs}g</td>
                     <td>{item.Total_Fat}g</td>
                     <td>
-                      <button onClick={() => setEditingItem(item)} className={styles.editButton}>Edit</button>
-                      <button onClick={() => handleDeleteItem(item.Item_ID)} className={styles.deleteButton}>Delete</button>
+                      <button
+                        onClick={() => setEditingItem(item)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleOrderMore(item.Item_ID, 10)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
+                      >
+                        Order 10 More
+                      </button>
+                      <button
+                        onClick={() => handleDeleteItem(item.Item_ID)}
+                        className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </>
                 )}
@@ -389,45 +347,39 @@ function InventoryManagement() {
       </div>
 
       {/* Inventory Logs */}
-      <div className={styles.logsSection}>
-        <h2>Inventory Logs</h2>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold mb-4">Inventory Logs</h2>
         {inventoryLogs.length > 0 ? (
-          <table className={styles.logsTable}>
+          <table className="w-full">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Item</th>
-                <th>Action</th>
-                <th>Quantity Changed</th>
-                <th>New Quantity</th>
-                <th>Updated by</th>
+                <th className="text-left p-2">Date</th>
+                <th className="text-left p-2">Item</th>
+                <th className="text-left p-2">Action</th>
+                <th className="text-left p-2">Quantity Changed</th>
+                <th className="text-left p-2">New Quantity</th>
+                <th className="text-left p-2">Updated by</th>
               </tr>
             </thead>
             <tbody>
               {inventoryLogs.map(log => (
-                <tr key={log.Log_ID}>
-                  <td>{new Date(log.Action_Date).toLocaleString()}</td>
-                  <td>{log.Item_Name}</td>
-                  <td>{log.Action_Type}</td>
-                  <td>{log.Quantity_Changed >= 0 ? `+${log.Quantity_Changed}` : log.Quantity_Changed}</td>
-                  <td>{log.New_Quantity}</td>
-                  <td>{log.Action_By}</td>
+                <tr key={log.Log_ID} className="border-b">
+                  <td className="p-2">{new Date(log.Action_Date).toLocaleString()}</td>
+                  <td className="p-2">{log.Item_Name}</td>
+                  <td className="p-2">{log.Action_Type}</td>
+                  <td className="p-2">{log.Quantity_Changed >= 0 ? `+${log.Quantity_Changed}` : log.Quantity_Changed}</td>
+                  <td className="p-2">{log.New_Quantity}</td>
+                  <td className="p-2">{log.Action_By}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <div className={styles.noLogs}>
+          <div className="text-center py-4">
             No inventory changes in the last 30 days
           </div>
         )}
       </div>
-
-      <QuantityConfirmationModal 
-        data={confirmQuantity}
-        onConfirm={handleQuantityChange}
-        onCancel={() => setConfirmQuantity(null)}
-      />
     </div>
   );
 }
