@@ -104,25 +104,29 @@ function InventoryManagement() {
     }
   };
 
-  const handleQuantityChange = async (itemId, newQuantity) => {
+  const handleQuantityChange = async (itemId, quantityToAdd) => {
     try {
       const userRole = localStorage.getItem('userRole');
-      await shopService.updateQuantity(itemId, parseInt(newQuantity), userRole);
+      const item = items.find(i => i.Item_ID === itemId);
+      const newTotalQuantity = item.Quantity + parseInt(quantityToAdd);
+      
+      await shopService.updateQuantity(itemId, newTotalQuantity, userRole);
       
       // Update local state immediately
       setItems(prevItems => prevItems.map(item => 
         item.Item_ID === itemId 
-          ? { ...item, Quantity: newQuantity, tempQuantity: newQuantity }
+          ? { ...item, Quantity: newTotalQuantity, tempQuantity: 0 } // Reset tempQuantity after addition
           : item
       ));
       
-      // Refresh inventory logs
+      // Refresh inventory logs immediately after successful update
       await fetchInventoryLogs();
       setError(null);
     } catch (err) {
       setError(err.message || 'Error updating quantity');
       // Revert changes on error
       await fetchItems();
+      await fetchInventoryLogs();
     }
   };
 
@@ -134,20 +138,9 @@ function InventoryManagement() {
     ));
   };
 
-  const handleApplyQuantity = (itemId, newQuantity, currentQuantity) => {
-    const newQty = parseInt(newQuantity) || 0;
-    const currentQty = parseInt(currentQuantity) || 0;
-    const quantityDiff = Math.abs(newQty - currentQty);
-    
-    if (quantityDiff > 10) {
-      setConfirmQuantity({
-        itemId,
-        quantity: newQty,
-        currentQuantity: currentQty
-      });
-    } else {
-      handleQuantityChange(itemId, newQty);
-    }
+  const handleApplyQuantity = (itemId, quantityToAdd, currentQuantity) => {
+    const addQty = parseInt(quantityToAdd) || 0;
+      handleQuantityChange(itemId, addQty);
   };
 
   const QuantityConfirmationModal = ({ onConfirm, onCancel, data }) => {
@@ -156,9 +149,10 @@ function InventoryManagement() {
     return (
       <div className={styles.modalOverlay}>
         <div className={styles.modal}>
-          <h3>Confirm Quantity Change</h3>
-          <p>Are you sure you want to change the quantity from {data.currentQuantity} to {data.quantity}?</p>
-          <p>This is a change of {Math.abs(data.quantity - data.currentQuantity)} units.</p>
+          <h3>Confirm Quantity Addition</h3>
+          <p>Current quantity: {data.currentQuantity}</p>
+          <p>Quantity to add: {data.quantity}</p>
+          <p>New total will be: {data.currentQuantity + data.quantity}</p>
           <div className={styles.modalButtons}>
             <button 
               onClick={() => {
@@ -187,8 +181,9 @@ function InventoryManagement() {
         <input
           type="number"
           min="0"
-          value={item.tempQuantity}
+          value={item.tempQuantity || ''}
           onChange={(e) => handleQuantityInputChange(item.Item_ID, e.target.value)}
+          placeholder="Add quantity"
           className={`${styles.quantityInput} ${item.LowStock ? styles.lowStock : ''}`}
         />
         <button 
@@ -199,7 +194,7 @@ function InventoryManagement() {
           )}
           className={styles.applyButton}
         >
-          Apply
+          Add
         </button>
       </div>
       <div className={styles.currentStock}>

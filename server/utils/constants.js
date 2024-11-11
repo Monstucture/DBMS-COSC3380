@@ -30,11 +30,19 @@ const CUSTOMER_ERRORS = {
 const TRANSACTION_ERRORS = {
     INSUFFICIENT_STOCK: 'One or more items are out of stock',
     PAYMENT_FAILED: 'Payment processing failed',
-}
+};
+
+const REPORT_ERRORS = {
+    SALES_REPORT_ERROR: 'Error generating sales report',
+    INVENTORY_REPORT_ERROR: 'Error generating inventory report',
+    INVALID_DATE_RANGE: 'Invalid date range provided',
+    NO_DATA_AVAILABLE: 'No data available for the specified period'
+};
 
 module.exports = {
     SHOP_ERRORS,
     AUTH_ERRORS,
     CUSTOMER_ERRORS,
-    TRANSACTION_ERRORS
+    TRANSACTION_ERRORS,
+    REPORT_ERRORS
 };

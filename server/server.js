@@ -28,11 +28,13 @@ app.use(express.json());
 const authRouter = require('./routes/auth');
 const shopRoutes = require('./routes/shop');
 const customerRouter = require('./routes/customers');
+const reportsRouter = require('./routes/reports');
 
 // Use Routes
 app.use('/shop', shopRoutes);
 app.use('/auth', authRouter);
 app.use('/acc', customerRouter);
+app.use('/reports', reportsRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

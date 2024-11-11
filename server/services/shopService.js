@@ -194,6 +194,7 @@ class ShopService {
             throw new Error(SHOP_ERRORS.DB_ERROR);
         }
     }
+
 }
 
 module.exports = ShopService;

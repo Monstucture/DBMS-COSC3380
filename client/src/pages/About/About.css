@@ -1,57 +1,56 @@
-
 .about-container {
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    color: rbg(93, 64, 55);
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    line-height: 1.6;
-  }
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  color: rbg(93, 64, 55);
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
 
-  .about-container *{
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-  }
-  
-  .about-container h1 {
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    text-align: center;
-    top: 10px;
-    font-size: 2.5rem;
-    color: #4a4a4a;
-    margin-bottom: 1.5rem;
-    margin-top: 60px
-  }
-  
-  .about-container h2 {
-    font-size: 2rem;
-    color: #d24d57;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-  }
+.about-container *{
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
 
-  .about-container p {
-    font-size: 1rem;
-    color: rgb(93, 64, 55);
-    margin-bottom: 1rem;
-  }
-  
-  .about-container ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    color: #666;
-  }
-  
-  .about-container li {
-    margin-bottom: 0.5rem;
-  }
+.about-container h1 {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  text-align: center;
+  top: 10px;
+  font-size: 2.5rem;
+  color: #4a4a4a;
+  margin-bottom: 1.5rem;
+  margin-top: 60px
+}
 
-  .contact-info {
-    background-color: #f7f7f7;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-top: 1rem;
-  }
-  
-  .contact-info p {
-    font-weight: bold;
-    margin: 0; }
+.about-container h2 {
+  font-size: 2rem;
+  color: #d24d57;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.about-container p {
+  font-size: 1rem;
+  color: rgb(93, 64, 55);
+  margin-bottom: 1rem;
+}
+
+.about-container ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  color: #666;
+}
+
+.about-container li {
+  margin-bottom: 0.5rem;
+}
+
+.contact-info {
+  background-color: #f7f7f7;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.contact-info p {
+  font-weight: bold;
+  margin: 0; }

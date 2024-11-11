@@ -107,6 +107,7 @@ class ShopController {
             res.status(500).json({ error: 'Error fetching inventory logs' });
         }
     }
+
 }
 
 module.exports = ShopController;
