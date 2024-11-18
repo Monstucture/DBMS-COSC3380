@@ -111,6 +111,10 @@ class ShopService {
 
             // Delete food_item first due to FK constraints
             await connection.query(shopQueries.deleteFoodItemQuery, [id]);
+            await connection.query(shopQueries.deleteInventoryLog, [id]);
+            await connection.query(shopQueries.deleteVendorPriceHisQuery, [id]);
+            await connection.query(shopQueries.deleteRetailPriceHisQuery, [id]);
+            await connection.query(shopQueries.deleteTransactionItem, [id]);
             await connection.query(shopQueries.deleteItemQuery, [id]);
 
             await connection.commit();

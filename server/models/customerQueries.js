@@ -18,12 +18,12 @@ const customerQueries = {
               WHEN c.Membership_Level = 'Gold' THEN 200 - (c.Total_Accrued_Discount_Points - c.Discount_Points_Used)
               ELSE 0
           END as Points_To_Next_Level
-      FROM customer c
+      FROM Customer c
       WHERE c.Customer_ID = ?
     `,
     
     getCustomerByPhone: `
-        SELECT * FROM customer 
+        SELECT * FROM Customer 
         WHERE Phone_Number = ?
     `,
   
@@ -38,9 +38,9 @@ const customerQueries = {
         i.Item_Name,
         ti.Quantity_Sold as Quantity,
         i.Unit_Price
-      FROM transaction t
-      JOIN transaction_item ti ON t.Transaction_ID = ti.Transaction_ID
-      JOIN item i ON ti.Item_ID = i.Item_ID
+      FROM Transaction t
+      JOIN Transaction_Item ti ON t.Transaction_ID = ti.Transaction_ID
+      JOIN Item i ON ti.Item_ID = i.Item_ID
       WHERE t.Customer_ID = ?
       ORDER BY t.Date DESC
     `,
@@ -57,8 +57,8 @@ const customerQueries = {
             cc.Promotion_ID,
             p.Discount_Percentage,
             p.Discount_Amount
-        FROM customer_coupons cc
-        LEFT JOIN promotions p ON cc.Promotion_ID = p.Promotion_ID
+        FROM Customer_Coupons cc
+        LEFT JOIN Promotions p ON cc.Promotion_ID = p.Promotion_ID
         WHERE cc.Customer_ID = ?
         AND cc.Is_Used = FALSE
         AND cc.Expiry_Date >= CURDATE()
@@ -70,7 +70,7 @@ const customerQueries = {
             cc.*,
             p.Discount_Percentage,
             p.Discount_Amount
-        FROM customer_coupons cc
+        FROM Customer_Coupons cc
         LEFT JOIN promotions p ON cc.Promotion_ID = p.Promotion_ID
         WHERE cc.Coupon_ID = ?
         AND cc.Customer_ID = ?
@@ -79,7 +79,7 @@ const customerQueries = {
     `,
 
     useCoupon: `
-        UPDATE customer_coupons
+        UPDATE Customer_Coupons
         SET 
             Is_Used = TRUE,
             Used_Date = CURDATE(),
@@ -91,7 +91,7 @@ const customerQueries = {
     `,
   
     updateCustomerPoints: `
-      UPDATE customer
+      UPDATE Customer
       SET 
         Total_Accrued_Discount_Points = Total_Accrued_Discount_Points + ?,
         Membership_Level = CASE
@@ -104,7 +104,7 @@ const customerQueries = {
     `,
   
     createCustomer: `
-      INSERT INTO customer (
+      INSERT INTO Customer (
           Phone_Number,
           Address,
           First_Name,
@@ -120,7 +120,7 @@ const customerQueries = {
     `,
   
     updateCustomerAddress: `
-      UPDATE customer 
+      UPDATE Customer 
       SET Address = ?
       WHERE Customer_ID = ?
     `

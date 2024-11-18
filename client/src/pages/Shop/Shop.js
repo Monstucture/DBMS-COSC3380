@@ -81,10 +81,6 @@ const Shop = ({ basketItems, addToBasket, updateBasketQuantity, removeFromBasket
     </div>
   );
 
-  const calculateTotal = (items) => {
-    return items.reduce((sum, item) => sum + (item.Unit_Price * item.quantity), 0);
-  };
-
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Main Content */}

@@ -5,48 +5,66 @@ const shopQueries = {
                 WHEN i.Quantity < 5 THEN TRUE 
                 ELSE FALSE 
             END as LowStock
-        FROM item i
-        LEFT JOIN food_item f ON i.Item_ID = f.Item_ID
+        FROM Item i
+        LEFT JOIN Food_Item f ON i.Item_ID = f.Item_ID
         ORDER BY i.Item_Name
     `,
     
     getItemByIdQuery: `
         SELECT i.*, f.*
-        FROM item i
-        LEFT JOIN food_item f ON i.Item_ID = f.Item_ID
+        FROM Item i
+        LEFT JOIN Food_Item f ON i.Item_ID = f.Item_ID
         WHERE i.Item_ID = ?
     `,
     
     insertItemQuery: `
-        INSERT INTO item (Item_Name, Unit_Price, Quantity) 
+        INSERT INTO Item (Item_Name, Unit_Price, Quantity) 
         VALUES (?, ?, ?)
     `,
     
     insertFoodItemQuery: `
-        INSERT INTO food_item (Item_ID, Calories, Protein, Sugar, Total_Carbs, Total_Fat) 
+        INSERT INTO Food_Item (Item_ID, Calories, Protein, Sugar, Total_Carbs, Total_Fat) 
         VALUES (?, ?, ?, ?, ?, ?)
     `,
 
     updateItemQuery: `
-        UPDATE item 
+        UPDATE Item 
         SET Item_Name = ?, Unit_Price = ?
         WHERE Item_ID = ?
     `,
 
     updateFoodItemQuery: `
-        UPDATE food_item 
+        UPDATE Food_Item 
         SET Calories = ?, Protein = ?, Sugar = ?, Total_Carbs = ?, Total_Fat = ?
         WHERE Item_ID = ?
     `,
 
     deleteItemQuery: `
-        DELETE FROM item
+        DELETE FROM Item
         WHERE Item_ID = ?
     `,
 
     deleteFoodItemQuery: `
-        DELETE FROM food_item
+        DELETE FROM Food_Item
         WHERE Item_ID = ?
+    `,
+
+    deleteInventoryLog: `
+        DELETE FROM Inventory_Log 
+        WHERE Item_ID = ?
+    `,
+
+    deleteVendorPriceHisQuery: `
+        DELETE FROM Vendor_Price_History 
+        WHERE Item_ID = ?
+    `,
+
+    deleteRetailPriceHisQuery: `
+        DELETE FROM Retail_Price_History WHERE Item_ID = ?
+    `,
+
+    deleteTransactionItem: `
+        DELETE FROM Transaction_Item WHERE Item_ID = ?
     `,
 
     getInventoryLogsQuery: `
@@ -58,8 +76,8 @@ const shopQueries = {
             l.New_Quantity,
             l.Action_By,
             i.Item_Name
-        FROM inventory_log l
-        JOIN item i ON l.Item_ID = i.Item_ID
+        FROM Inventory_Log l
+        JOIN Item i ON l.Item_ID = i.Item_ID
         WHERE l.Action_Date BETWEEN ? AND ?
         ORDER BY l.Action_Date DESC
     `

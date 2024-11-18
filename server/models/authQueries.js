@@ -1,19 +1,19 @@
 const authQueries = {
     getEmployeeByCredentials: `
-        SELECT * FROM employee 
+        SELECT * FROM Employee 
         WHERE Employee_ID = ? 
         AND First_Name = ? 
         AND Last_Name = ?
     `,
 
     getAdminByCredentials: `
-        SELECT * FROM admin
+        SELECT * FROM Admin
         WHERE Username = ?
         AND Password = ?
     `,
     
     getCustomerByPhone: `
-        SELECT * FROM customer 
+        SELECT * FROM Customer 
         WHERE Phone_Number = ?
     `
 };
