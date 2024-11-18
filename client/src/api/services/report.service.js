@@ -37,5 +37,12 @@ export const reportService = {
             console.error('Error fetching inventory report:', error);
             throw error;
         }
-    }
+    },
+
+    getCustomerAnalytics: async (startDate, endDate) => {
+        const response = await api.get(API_CONFIG.ENDPOINTS.REPORTS.ANALYTICS, {
+            params: { startDate, endDate }
+        });
+        return response.data;
+    },
 };

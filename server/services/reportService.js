@@ -20,6 +20,18 @@ class ReportService {
                 [startDate, endDate]
             );
 
+            // Get detailed sales data
+            const [detailedData] = await connection.query(
+                reportQueries.getSalesDetailsData,
+                [startDate, endDate]
+            );
+
+            // Parse the JSON string in items field
+            const parsedDetailedData = detailedData.map(row => ({
+                ...row,
+                items: JSON.parse(`[${row.items}]`)
+            }));
+
             // Calculate summary statistics
             const summary = {
                 totalRevenue: salesData.reduce((sum, day) => sum + Number(day.revenue), 0),
@@ -44,6 +56,7 @@ class ReportService {
                     profit: Number(day.profit),
                     orders: Number(day.orders)
                 })),
+                detailedData: parsedDetailedData,
                 summary
             };
 

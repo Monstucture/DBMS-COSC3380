@@ -142,7 +142,7 @@ class ShopService {
             await connection.query('SET @user_role = ?', [userRole]);
             
             const [result] = await connection.query(
-                'SELECT Quantity FROM item WHERE Item_ID = ?',
+                'SELECT Quantity FROM Item WHERE Item_ID = ?',
                 [id]
             );
 
@@ -153,13 +153,13 @@ class ShopService {
             const previousQuantity = result[0].Quantity;
             
             await connection.query(
-                'UPDATE item SET Quantity = ? WHERE Item_ID = ?',
+                'UPDATE Item SET Quantity = ? WHERE Item_ID = ?',
                 [quantity, id]
             );
 
             // Log the quantity change
             await connection.query(
-                `INSERT INTO inventory_log 
+                `INSERT INTO Inventory_Log 
                 (Item_ID, Action_Type, Quantity_Changed, Previous_Quantity, New_Quantity, Action_By)
                 VALUES (?, ?, ?, ?, ?, ?)`,
                 [

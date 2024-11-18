@@ -18,6 +18,7 @@ const Checkout = lazy(() => import('./components/Checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('./components/Checkout/OrderConfirmation'));
 const Reports = lazy(() => import('./pages/AdminDashboard/SaleReports/Reports'));
 const InventoryReport = lazy(() => import('./pages/AdminDashboard/SaleReports/InventoryReport'));
+const CustomerAnalytics = lazy(() => import('./pages/AdminDashboard/SaleReports/CustomerAnalytics'));
 const SalesReport = lazy(() => import('./pages/AdminDashboard/SaleReports/SalesReport'));
 const Basket = lazy(() => import('./components/Basket/Basket'));
 
@@ -151,6 +152,7 @@ function App() {
               >
                 <Route path="sales" element={<SalesReport />} />
                 <Route path="inventory" element={<InventoryReport />} />
+                <Route path="analytics" element={<CustomerAnalytics />} />
               </Route>
             </Routes>
           </div>

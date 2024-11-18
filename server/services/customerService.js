@@ -174,7 +174,7 @@ class CustomerService {
     
                 // Update inventory
                 await connection.query(
-                    'UPDATE item SET Quantity = Quantity - ? WHERE Item_ID = ?',
+                    'UPDATE Item SET Quantity = Quantity - ? WHERE Item_ID = ?',
                     [item.quantity, item.Item_ID]
                 );
             }
@@ -185,7 +185,7 @@ class CustomerService {
     
             if (couponId) {
                 const [coupons] = await connection.query(
-                    'SELECT * FROM promotions WHERE Promotion_ID = ?',
+                    'SELECT * FROM Promotions WHERE Promotion_ID = ?',
                     [couponId]
                 );
     
@@ -204,7 +204,7 @@ class CustomerService {
     
                     // Update transaction with final amounts
                     await connection.query(
-                        `UPDATE transaction 
+                        `UPDATE Transaction 
                          SET Total_Price = ?,
                              Discount_Amount = ?
                          WHERE Transaction_ID = ?`,
@@ -266,7 +266,7 @@ class CustomerService {
         
         // Check inventory
         const [inventoryResult] = await connection.query(
-            'SELECT Quantity FROM item WHERE Item_ID = ?',
+            'SELECT Quantity FROM Item WHERE Item_ID = ?',
             [item.Item_ID]
         );
     
@@ -282,7 +282,7 @@ class CustomerService {
     
         // Update inventory
         await connection.query(
-            'UPDATE item SET Quantity = Quantity - ? WHERE Item_ID = ?',
+            'UPDATE Item SET Quantity = Quantity - ? WHERE Item_ID = ?',
             [item.quantity, item.Item_ID]
         );
         }

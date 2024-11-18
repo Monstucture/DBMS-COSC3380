@@ -121,6 +121,7 @@ const Navbar = ({ basketItems = [], toggleBasket, isBasketOpen }) => {
                 <div className="dropdown-content">
                   <Link to="/admin/reports/sales" className="text-gray-700 hover:text-gray-900">Sales Report</Link>
                   <Link to="/admin/reports/inventory" className="text-gray-700 hover:text-gray-900">Inventory Report</Link>
+                  <Link to="/admin/reports/analytics" className="text-gray-700 hover:text-gray-900">Customer Analytics</Link>
                 </div>
               </div>
               <button onClick={handleLogout} className="logout-btn">Logout</button>

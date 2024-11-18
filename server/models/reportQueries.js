@@ -22,11 +22,40 @@ const reportQueries = {
             ) as profit
         FROM Transaction t
         JOIN Transaction_Item ti ON t.Transaction_ID = ti.Transaction_ID
-        JOIN item i ON ti.Item_ID = i.Item_ID
+        JOIN Item i ON ti.Item_ID = i.Item_ID
         WHERE t.Date BETWEEN ? AND ?
         GROUP BY i.Item_ID, i.Item_Name
         ORDER BY quantitySold DESC
         LIMIT 10
+    `,
+
+    getSalesDetailsData: `
+        SELECT 
+            t.Transaction_ID,
+            t.Date,
+            t.Total_Price,
+            t.Payment_Type,
+            t.Discount_Percentage,
+            t.Discount_Amount,
+            c.First_Name,
+            c.Last_Name,
+            c.Membership_Level,
+            GROUP_CONCAT(
+                JSON_OBJECT(
+                    'Item_Name', i.Item_Name,
+                    'Quantity_Sold', ti.Quantity_Sold,
+                    'Unit_Price', i.Unit_Price
+                )
+            ) as items
+        FROM Transaction t
+        JOIN Customer c ON t.Customer_ID = c.Customer_ID
+        JOIN Transaction_Item ti ON t.Transaction_ID = ti.Transaction_ID
+        JOIN Item i ON ti.Item_ID = i.Item_ID
+        WHERE t.Date BETWEEN ? AND ?
+        GROUP BY t.Transaction_ID, t.Date, t.Total_Price, t.Payment_Type, 
+                t.Discount_Percentage, t.Discount_Amount,
+                c.First_Name, c.Last_Name, c.Membership_Level
+        ORDER BY t.Date DESC
     `,
 
     getInventoryReport: `

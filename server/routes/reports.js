@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ReportController = require('../controllers/reportController');
+const CustomerAnalyticsController = require('../controllers/customerAnalyticsController');
 const { authMiddleware, isStrictAdmin } = require('../middlewares/auth');
 
 // Sales Report
@@ -8,5 +9,11 @@ router.get('/sales', authMiddleware, isStrictAdmin, ReportController.getSalesRep
 
 // Inventory Sale Report
 router.get('/inventory', authMiddleware, isStrictAdmin, ReportController.getInventoryReport);
+
+// Customer analytics
+router.get('/analytics', authMiddleware, isStrictAdmin, CustomerAnalyticsController.getAnalytics);
+router.get('/customer/:customerId', authMiddleware, isStrictAdmin, CustomerAnalyticsController.getCustomerDetails);
+router.get('/customer/:customerId/history', authMiddleware, isStrictAdmin, CustomerAnalyticsController.getCustomerHistory);
+
 
 module.exports = router;
