@@ -10,15 +10,14 @@ A web-based management system for ice cream shops with separate interfaces for a
 - View ice cream flavors and details
 - Track loyalty points and membership status
 - View order history
-- Profile management
 
 ### Admin Features
 
 - Secure employee login system
 - Inventory management
 - View and manage products
-- Employee management
-- Order tracking
+- Sale Reports & Inventory Reports
+- Customer Analytics
 
 ## Prerequisites
 
