@@ -245,7 +245,7 @@ const Checkout = ({ basketItems, clearBasket }) => {
             {calculateTotal().discount > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>{calculateTotal().discountDescription}:</span>
-                <span>-${calculateTotal().discount}</span>
+                <span>-${Number(calculateTotal().discount).toFixed(2)}</span>
               </div>
             )}
 
@@ -253,7 +253,7 @@ const Checkout = ({ basketItems, clearBasket }) => {
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between font-bold">
                 <span>Total:</span>
-                <span>${calculateTotal().finalTotal}</span>
+                <span>${Number(calculateTotal().finalTotal).toFixed(2)}</span>
               </div>
             </div>
           </div>

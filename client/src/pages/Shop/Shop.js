@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { shopService } from '../../api';
 
@@ -31,7 +30,6 @@ const Shop = ({ basketItems, addToBasket, updateBasketQuantity, removeFromBasket
   const [itemDetails, setItemDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchItems = async () => {

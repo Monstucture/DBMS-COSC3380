@@ -26,14 +26,14 @@ class CustomerController {
         }
     }
 
-    // TODO get past orders
     static async getOrders(req, res) {
         try {
             if (req.user.role !== 'customer') {
                 throw new Error(CUSTOMER_ERRORS.INVALID_ROLE);
             }
-
+    
             const orders = await CustomerService.getCustomerOrders(req.user.id);
+            console.log('Orders from service:', orders);
             res.json(orders);
         } catch (error) {
             console.error('Controller - getOrders error:', error);

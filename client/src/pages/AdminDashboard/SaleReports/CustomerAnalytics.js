@@ -3,6 +3,7 @@ import { LineChart, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { reportService } from '../../../api';
+import { formatDateMD } from '../../../utils/dateUtils';
 
 const CustomerAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState({
@@ -19,6 +20,10 @@ const CustomerAnalytics = () => {
   });
   const [endDate, setEndDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerTransactions, setCustomerTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsError, setTransactionsError] = useState(null);
 
   const fetchAnalyticsData = async () => {
     try {
@@ -34,12 +39,36 @@ const CustomerAnalytics = () => {
     }
   };
 
+  const fetchCustomerTransactions = async (customerId) => {
+    try {
+      setTransactionsLoading(true);
+      const transactions = await reportService.getCustomerTransactionHistory(customerId, startDate, endDate);
+      setCustomerTransactions(transactions);
+      setTransactionsError(null);
+    } catch (err) {
+      setTransactionsError('Error fetching customer transactions');
+      console.error('Error:', err);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAnalyticsData();
   }, [startDate, endDate]);
 
+  useEffect(() => {
+    if (selectedCustomer) {
+      fetchCustomerTransactions(selectedCustomer.id);
+    }
+  }, [selectedCustomer, startDate, endDate]);
+
   if (loading) return <div className="p-4">Loading analytics data...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
+
+  const handleCustomerSelect = (customer) => {
+    setSelectedCustomer(customer);
+  };
 
   return (
     <div className="p-6">
@@ -120,7 +149,7 @@ const CustomerAnalytics = () => {
             </div>
             <div className="bg-white p-4 rounded shadow">
               <h3 className="text-lg font-semibold mb-2">Average Order Value</h3>
-              <p className="text-2xl">${analyticsData.averageOrderValue}</p>
+              <p className="text-2xl">${Number(analyticsData.averageOrderValue).toFixed(2)}</p>
             </div>
             <div className="bg-white p-4 rounded shadow">
               <h3 className="text-lg font-semibold mb-2">Active Members</h3>
@@ -162,7 +191,12 @@ const CustomerAnalytics = () => {
                 </thead>
                 <tbody>
                   {analyticsData.topCustomers.map((customer, index) => (
-                    <tr key={customer.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <tr
+                      key={customer.id}
+                      className={index % 2 === 0 ? 'bg-gray-50' : ''}
+                      onClick={() => handleCustomerSelect(customer)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <td className="p-2">{customer.name}</td>
                       <td className="p-2">{customer.membershipLevel}</td>
                       <td className="p-2">{customer.totalOrders}</td>
@@ -237,6 +271,65 @@ const CustomerAnalytics = () => {
               <Legend />
               <Bar dataKey="pointsUsed" fill="#8884d8" name="Points Used" />
             </BarChart>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Customer Details */}
+      {selectedCustomer && (
+        <div className="mt-6 bg-white p-6 rounded shadow">
+          <h2 className="text-xl font-semibold mb-4">
+            {selectedCustomer.name} - {selectedCustomer.membershipLevel}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Orders</h3>
+              {transactionsLoading ? (
+                <div className="p-4">Loading customer transactions...</div>
+              ) : transactionsError ? (
+                <div className="p-4 text-red-500">{transactionsError}</div>
+              ) : (
+                <div className="space-y-2">
+                  {customerTransactions.map((order, index) => (
+                    <div key={index} className="bg-gray-100 p-2 rounded">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium">Order #{order.Transaction_ID}</div>
+                          <div className="text-sm text-gray-500">
+                            {formatDateMD(order.Date)}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">${Number(order.Total_Price).toFixed(2)}</div>
+                          <div className="text-sm text-gray-500">
+                            {order.pointsEarned} points
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Points</h3>
+              <div className="bg-gray-100 p-4 rounded">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">Total Points</div>
+                    <div className="text-4xl font-bold">
+                      {selectedCustomer.pointsBalance}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Points Earned</div>
+                    <div className="text-4xl font-bold">
+                      {selectedCustomer.totalPointsEarned}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

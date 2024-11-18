@@ -13,7 +13,6 @@ router.get('/inventory', authMiddleware, isStrictAdmin, ReportController.getInve
 // Customer analytics
 router.get('/analytics', authMiddleware, isStrictAdmin, CustomerAnalyticsController.getAnalytics);
 router.get('/customer/:customerId', authMiddleware, isStrictAdmin, CustomerAnalyticsController.getCustomerDetails);
-router.get('/customer/:customerId/history', authMiddleware, isStrictAdmin, CustomerAnalyticsController.getCustomerHistory);
-
+router.get('/customer/:customerId/transaction', authMiddleware, isStrictAdmin, CustomerAnalyticsController.getCustomerTransactions);
 
 module.exports = router;

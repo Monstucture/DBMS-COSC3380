@@ -34,8 +34,17 @@ class CustomerService {
                 customerQueries.getCustomerOrders,
                 [customerId]
             );
-
-            return orders;
+    
+            console.log('Orders from database:', orders);
+    
+            return orders.map(order => ({
+                Transaction_ID: order.Transaction_ID,
+                Date: order.Transaction_Date,
+                Total_Price: parseFloat(order.Total_Amount),
+                Discount_Percentage: order.Discount_Percentage,
+                Discount_Amount: order.Discount_Amount,
+                items: JSON.parse(order.items)
+            }));
         } catch (error) {
             console.error('Service - getCustomerOrders error:', error);
             throw error;
@@ -158,7 +167,7 @@ class CustomerService {
             for (const item of items) {
                 // Check inventory
                 const [inventoryResult] = await connection.query(
-                    'SELECT Quantity FROM item WHERE Item_ID = ?',
+                    'SELECT Quantity FROM Item WHERE Item_ID = ?',
                     [item.Item_ID]
                 );
     

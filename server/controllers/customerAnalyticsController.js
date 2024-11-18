@@ -33,21 +33,21 @@ class CustomerAnalyticsController {
         }
     }
 
-    static async getCustomerHistory(req, res) {
+    static async getCustomerTransactions(req, res) {
         try {
-            const { customerId } = req.params;
-            const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date(0);
-            const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
-
-            const history = await CustomerAnalyticsService.getCustomerTransactionHistory(
-                customerId,
-                startDate,
-                endDate
-            );
-            res.json(history);
+          const { customerId } = req.params;
+          const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date(0);
+          const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+    
+          const transactions = await CustomerAnalyticsService.getCustomerTransactionHistory(
+            customerId,
+            startDate,
+            endDate
+          );
+          res.json(transactions);
         } catch (error) {
-            console.error('Controller - getCustomerHistory error:', error);
-            res.status(500).json({ error: error.message });
+          console.error('Controller - getCustomerTransactions error:', error);
+          res.status(500).json({ error: error.message });
         }
     }
 }

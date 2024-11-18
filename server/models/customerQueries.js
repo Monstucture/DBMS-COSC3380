@@ -28,20 +28,25 @@ const customerQueries = {
     `,
   
     getCustomerOrders: `
-      SELECT 
+      SELECT
         t.Transaction_ID,
-        t.Date as Transaction_Date,
+        DATE_FORMAT(t.Date, '%Y-%m-%d %H:%i:%s') as Transaction_Date,
         t.Total_Price as Total_Amount,
         t.Discount_Percentage,
         t.Discount_Amount,
-        ti.Item_ID,
-        i.Item_Name,
-        ti.Quantity_Sold as Quantity,
-        i.Unit_Price
+        CONCAT('[',
+          GROUP_CONCAT(JSON_OBJECT(
+            'Item_ID', ti.Item_ID,
+            'Item_Name', i.Item_Name,
+            'Unit_Price', i.Unit_Price,
+            'Quantity_Sold', ti.Quantity_Sold
+          )),
+        ']') AS items
       FROM Transaction t
       JOIN Transaction_Item ti ON t.Transaction_ID = ti.Transaction_ID
       JOIN Item i ON ti.Item_ID = i.Item_ID
       WHERE t.Customer_ID = ?
+      GROUP BY t.Transaction_ID
       ORDER BY t.Date DESC
     `,
 

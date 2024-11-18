@@ -40,9 +40,32 @@ export const reportService = {
     },
 
     getCustomerAnalytics: async (startDate, endDate) => {
-        const response = await api.get(API_CONFIG.ENDPOINTS.REPORTS.ANALYTICS, {
-            params: { startDate, endDate }
-        });
-        return response.data;
-    },
-};
+        try {
+          const response = await api.get(API_CONFIG.ENDPOINTS.REPORTS.ANALYTICS, {
+            params: { startDate, endDate },
+          });
+          return response.data;
+        } catch (error) {
+          console.error('Error fetching customer analytics:', error);
+          throw error;
+        }
+      },
+    
+      getCustomerTransactionHistory: async (customerId, startDate, endDate) => {
+        try {
+          const response = await api.get(
+            `${API_CONFIG.ENDPOINTS.REPORTS.CUSTOMER}/${customerId}/transaction`,
+            {
+              params: {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+              },
+            }
+          );
+          return response.data;
+        } catch (error) {
+          console.error('Error fetching customer transaction history:', error);
+          throw error;
+        }
+      },
+    };

@@ -23,7 +23,8 @@ const API_CONFIG = {
       REPORTS: {
         SALES: '/reports/sales',
         INVENTORY: '/reports/inventory',
-        ANALYTICS: '/reports/analytics'
+        ANALYTICS: '/reports/analytics',
+        CUSTOMER:  '/reports/customer'
       }
     },
     HEADERS: {
